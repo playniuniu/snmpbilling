@@ -48,6 +48,9 @@ class collect():
         if not varBindTable:
             return None
         else:
+            # Important! clear collect_list
+            self.collect_list = []
+
             self.parseBindTable(varBindTable)
             collect_items = str(len(self.collect_list))
             logging.info("Collect %s ip: %s for %s items" %
@@ -89,8 +92,8 @@ class collect():
 def _testunit():
     logging.basicConfig(level=logging.INFO)
     community = 'luquanne40e12!@'
-    ip_addr = '221.192.23.232'
-    name = 'ne40e-232'
+    ip_addr = '110.249.211.254'
+    name = 's9312-254'
 
     snmpobj = collect(name, ip_addr, community)
     table = snmpobj.run()

@@ -39,7 +39,6 @@ class snmpdb():
             ifOutOctets = {"$push": {"ifOutOctets": row['ifOutOctets']}}
 
             try:
-                # self.conn.insert({'key': key})
                 self.conn.update(key, basedata, upsert=True)
                 self.conn.update(key, ifInOctets, upsert=True)
                 self.conn.update(key, ifOutOctets, upsert=True)
@@ -57,8 +56,8 @@ def _testunit():
     logging.basicConfig(level=logging.INFO)
 
     community = 'luquanne40e12!@'
-    ip_addr = '221.192.23.232'
-    name = 'ne40e_232'
+    ip_addr = '110.249.211.254'
+    name = 's9312-254'
     current_month = date.today().strftime("%Y%m")
 
     snmpobj = collect(name, ip_addr, community)

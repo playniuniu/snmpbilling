@@ -36,6 +36,7 @@ class snmpDaemon(baseDaemon):
     def snmp_queen(self, args):
 
         if os.getppid() != self.parent_pid:
+            logging.info("Pid: {} terminated by parent process!".format(os.getpid()))
             exit(1)
 
         queen_task = args
@@ -48,12 +49,12 @@ class snmpDaemon(baseDaemon):
 
         self.snmprun_process(queen_task)
 
-    def snmp_runprocess1(self, task):
-        print('Run task %s: %s' % (os.getpid(), task['dev_name']))
+    def demo_queen(self, task):
+        logging.debug('Run task %s: %s' % (os.getpid(), task['dev_name']))
         start = time.time()
-        time.sleep(10)
+        time.sleep(5)
         end = time.time()
-        print('Task %s runs %0.2f seconds.' % (os.getpid(), (end - start)))
+        logging.debug('Task %s runs %0.2f seconds.' % (os.getpid(), (end - start)))
 
     def run(self):
         self.parent_pid = os.getpid()
@@ -73,7 +74,7 @@ class snmpDaemon(baseDaemon):
 
 def main():
     logging.basicConfig(format='%(asctime)s %(message)s',
-        datefmt='%Y/%m/%d %H:%M:%S', level=logging.DEBUG)
+        datefmt='%Y/%m/%d %H:%M:%S', level=logging.DEBUG, filename='/tmp/snmprun.log')
 
     snmp_daemon = snmpDaemon()
 
