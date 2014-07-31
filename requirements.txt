@@ -1,0 +1,5 @@
+pyasn1==0.1.7
+pycrypto==2.6.1
+pymongo==2.7.2
+pysnmp==4.2.5
+pysnmp-mibs==0.1.4
