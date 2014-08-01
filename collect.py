@@ -84,6 +84,10 @@ class collect():
                 oid_name, oid_value = self.parseOid(oid, val)
                 oid_dict[oid_name] = oid_value
 
+            # add mongodb key in snmpwalk function
+            if snmp_type == 'snmpwalk':
+                oid_dict = self.generateSnmpTableRow(oid_dict)
+
             self.collect_list.append(oid_dict)
 
     def parseOid(self, oid, val):
@@ -97,6 +101,14 @@ class collect():
 
         # index = '.'.join(map(lambda v: v.prettyPrint(), indices))
         return symName, value.prettyPrint()
+
+    def generateSnmpTableRow(self, oid_dict):
+        key = '-'.join([self.name, oid_dict['ifDescr'], self.current_date])
+        oid_dict['key'] = key
+        oid_dict['name'] = self.name
+        oid_dict['ip_addr'] = self.ip_addr
+        oid_dict['date'] = self.current_date
+        return oid_dict
 
     def generateMibVariable(self, mib_args, snmp_type='snmpwalk'):
         mib_args_list = []
