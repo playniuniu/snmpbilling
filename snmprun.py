@@ -16,15 +16,14 @@ import snmpConfig
 
 class snmpDaemon(baseDaemon):
 
-    def __init__(self, pid_file='/tmp/snmprun.pid', pool_max=10):
+    def __init__(self, pid_file='/tmp/' + sys.argv[0] + '.pid'):
         baseDaemon.__init__(self, pid_file)
-        self.pool_max = pool_max
         self.snmp_list = []
 
     def snmprun_process(self, args):
 
         snmpobj = collect(args['dev_name'], args['ip_addr'], args['community'])
-        snmp_data = snmpobj.run()
+        snmp_data = snmpobj.run(snmpConfig.snmp_mib)
 
         snmp_database = snmpdb()
         snmp_database.useCollections(args['db_name'], args['table_name'])
@@ -90,11 +89,11 @@ def main():
         elif 'status' == sys.argv[1]:
             snmp_daemon.status()
         else:
-            print ("Usage: {} start|stop|restart|status".format(sys.argv[0]))
+            print("Usage: {} start|stop|restart|status".format(sys.argv[0]))
             sys.exit(2)
         sys.exit(0)
     else:
-        print ("Usage: {} start|stop|restart|status".format(sys.argv[0]))
+        print("Usage: {} start|stop|restart|status".format(sys.argv[0]))
         sys.exit(2)
 
 
