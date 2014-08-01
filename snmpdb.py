@@ -60,8 +60,15 @@ def _testunit():
     name = 's9312-254'
     current_month = date.today().strftime("%Y%m")
 
+    mib_arg_list = [
+        {'mib': 'IF-MIB', 'key': 'ifIndex'},
+        {'mib': 'IF-MIB', 'key': 'ifDescr'},
+        {'mib': 'IF-MIB', 'key': 'ifInOctets'},
+        {'mib': 'IF-MIB', 'key': 'ifOutOctets'},
+    ]
+
     snmpobj = collect(name, ip_addr, community)
-    snmp_data = snmpobj.run()
+    snmp_data = snmpobj.run(mib_arg_list)
 
     db_name = 'billing'
     collections_name = 'billing_' + current_month
