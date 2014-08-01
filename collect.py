@@ -17,17 +17,28 @@ class collect():
         self.udp_port = udp_port
         self.current_date = date.today().strftime("%Y%m%d")
 
-    def getSnmpInfo(self):
+    def getSnmpInfo(self, mib_args, snmp_type='snmpwalk'):
         self.cmdGenerator = cmdgen.CommandGenerator()
 
-        errorIndication, errorStatus, errorIndex, varBindTable = self.cmdGenerator.nextCmd(
-            cmdgen.CommunityData(self.community),
-            cmdgen.UdpTransportTarget((self.ip_addr, self.udp_port)),
-            (('IF-MIB', 'ifIndex'),),
-            (('IF-MIB', 'ifDescr'),),
-            (('IF-MIB', 'ifInOctets'),),
-            (('IF-MIB', 'ifOutOctets'),),
-        )
+        if snmp_type == 'snmpwalk':
+            errorIndication, errorStatus, errorIndex, varBindTable = self.cmdGenerator.nextCmd(
+                cmdgen.CommunityData(self.community),
+                cmdgen.UdpTransportTarget((self.ip_addr, self.udp_port)),
+                *mib_args
+            )
+
+        elif snmp_type == 'snmpget':
+            errorIndication, errorStatus, errorIndex, varBindTable = self.cmdGenerator.getCmd(
+                cmdgen.CommunityData(self.community),
+                cmdgen.UdpTransportTarget((self.ip_addr, self.udp_port)),
+                mib_args,
+                # lookupValues=True,
+                # lookupNames=True
+            )
+
+        else:
+            logging.error("ERROR! Wrong type: %s" % snmp_type)
+            return None
 
         if errorIndication:
             logging.error("ERROR! Cannot connect to %s with %s" %
@@ -43,29 +54,36 @@ class collect():
         else:
             return varBindTable
 
-    def run(self):
-        varBindTable = self.getSnmpInfo()
-        if not varBindTable:
+    def run(self, args, snmp_type='snmpwalk'):
+
+        mib_args = self.generateMibVariable(args, snmp_type)
+        varBindTable = self.getSnmpInfo(mib_args, snmp_type)
+
+        if varBindTable is None:
             return None
         else:
             # Important! clear collect_list
             self.collect_list = []
 
-            self.parseBindTable(varBindTable)
+            self.parseBindTable(varBindTable, snmp_type)
             collect_items = str(len(self.collect_list))
             logging.info("Collect %s ip: %s for %s items" %
                 (self.name, self.ip_addr, collect_items))
             return self.collect_list
 
-    def parseBindTable(self, varBindTable):
+    def parseBindTable(self, varBindTable, snmp_type):
+
         for varBindTableRow in varBindTable:
             oid_dict = {}
 
-            for oid, val in varBindTableRow:
+            # made snmpget value same as list
+            if snmp_type == 'snmpget':
+                varBindTableRow = [varBindTableRow, ]
+
+            for (oid, val) in varBindTableRow:
                 oid_name, oid_value = self.parseOid(oid, val)
                 oid_dict[oid_name] = oid_value
 
-            oid_dict = self.generateSnmpTableRow(oid_dict)
             self.collect_list.append(oid_dict)
 
     def parseOid(self, oid, val):
@@ -80,13 +98,16 @@ class collect():
         # index = '.'.join(map(lambda v: v.prettyPrint(), indices))
         return symName, value.prettyPrint()
 
-    def generateSnmpTableRow(self, oid_dict):
-        key = '-'.join([self.name, oid_dict['ifDescr'], self.current_date])
-        oid_dict['key'] = key
-        oid_dict['name'] = self.name
-        oid_dict['ip_addr'] = self.ip_addr
-        oid_dict['date'] = self.current_date
-        return oid_dict
+    def generateMibVariable(self, mib_args, snmp_type='snmpwalk'):
+        if snmp_type == "snmpwalk":
+            mib_args_list = []
+            for row in mib_args:
+                mib_args_list.append(
+                    cmdgen.MibVariable(row['mib'], row['key']))
+            return mib_args_list
+
+        if snmp_type == "snmpget":
+            return cmdgen.MibVariable(mib_args['mib'], mib_args['key'], int(mib_args['index']))
 
 
 def _testunit():
@@ -95,8 +116,18 @@ def _testunit():
     ip_addr = '110.249.211.254'
     name = 's9312-254'
 
+    mib_arg_list = [
+        {'mib': 'IF-MIB', 'key': 'ifIndex'},
+        {'mib': 'IF-MIB', 'key': 'ifDescr'},
+        {'mib': 'IF-MIB', 'key': 'ifInOctets'},
+        {'mib': 'IF-MIB', 'key': 'ifOutOctets'},
+    ]
     snmpobj = collect(name, ip_addr, community)
-    table = snmpobj.run()
+    table = snmpobj.run(mib_arg_list)
+    print(table)
+
+    mib_arg = {'mib': 'IF-MIB', 'key': 'ifDescr', 'index': 20}
+    table = snmpobj.run(mib_arg, 'snmpget')
     print(table)
 
 if __name__ == '__main__':
