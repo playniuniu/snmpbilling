@@ -31,7 +31,7 @@ class collect():
             errorIndication, errorStatus, errorIndex, varBindTable = self.cmdGenerator.getCmd(
                 cmdgen.CommunityData(self.community),
                 cmdgen.UdpTransportTarget((self.ip_addr, self.udp_port)),
-                mib_args,
+                *mib_args
                 # lookupValues=True,
                 # lookupNames=True
             )
@@ -99,15 +99,18 @@ class collect():
         return symName, value.prettyPrint()
 
     def generateMibVariable(self, mib_args, snmp_type='snmpwalk'):
-        if snmp_type == "snmpwalk":
-            mib_args_list = []
+        mib_args_list = []
+        if snmp_type == 'snmpwalk':
             for row in mib_args:
                 mib_args_list.append(
                     cmdgen.MibVariable(row['mib'], row['key']))
-            return mib_args_list
 
-        if snmp_type == "snmpget":
-            return cmdgen.MibVariable(mib_args['mib'], mib_args['key'], int(mib_args['index']))
+        if snmp_type == 'snmpget':
+            for row in mib_args:
+                mib_args_list.append(
+                    cmdgen.MibVariable(row['mib'], row['key'], row['index']))
+
+        return mib_args_list
 
 
 def _testunit():
@@ -126,7 +129,12 @@ def _testunit():
     table = snmpobj.run(mib_arg_list)
     print(table)
 
-    mib_arg = {'mib': 'IF-MIB', 'key': 'ifDescr', 'index': 20}
+    mib_arg = [
+        {'mib': 'IF-MIB', 'key': 'ifIndex', 'index': 55},
+        {'mib': 'IF-MIB', 'key': 'ifDescr', 'index': 55},
+        {'mib': 'IF-MIB', 'key': 'ifInOctets', 'index': 55},
+        {'mib': 'IF-MIB', 'key': 'ifOutOctets', 'index': 55},
+    ]
     table = snmpobj.run(mib_arg, 'snmpget')
     print(table)
 
