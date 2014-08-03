@@ -10,8 +10,7 @@ class collect():
 
     collect_list = []
 
-    def __init__(self, name, ip_addr, community, udp_port=161):
-        self.name = name
+    def __init__(self, ip_addr, community, udp_port=161):
         self.ip_addr = ip_addr
         self.community = community
         self.udp_port = udp_port
@@ -67,8 +66,8 @@ class collect():
 
             self.parseBindTable(varBindTable, snmp_type)
             collect_items = str(len(self.collect_list))
-            logging.info("Collect %s ip: %s for %s items" %
-                (self.name, self.ip_addr, collect_items))
+            logging.info("Collect IP: %s for %s items" %
+                (self.ip_addr, collect_items))
             return self.collect_list
 
     def parseBindTable(self, varBindTable, snmp_type):
@@ -84,10 +83,6 @@ class collect():
                 oid_name, oid_value = self.parseOid(oid, val)
                 oid_dict[oid_name] = oid_value
 
-            # add mongodb key in snmpwalk function
-            if snmp_type == 'snmpwalk':
-                oid_dict = self.generateSnmpTableRow(oid_dict)
-
             self.collect_list.append(oid_dict)
 
     def parseOid(self, oid, val):
@@ -101,14 +96,6 @@ class collect():
 
         # index = '.'.join(map(lambda v: v.prettyPrint(), indices))
         return symName, value.prettyPrint()
-
-    def generateSnmpTableRow(self, oid_dict):
-        key = '-'.join([self.name, oid_dict['ifDescr'], self.current_date])
-        oid_dict['key'] = key
-        oid_dict['name'] = self.name
-        oid_dict['ip_addr'] = self.ip_addr
-        oid_dict['date'] = self.current_date
-        return oid_dict
 
     def generateMibVariable(self, mib_args, snmp_type='snmpwalk'):
         mib_args_list = []
@@ -129,7 +116,6 @@ def _testunit():
     logging.basicConfig(level=logging.INFO)
     community = 'luquanne40e12!@'
     ip_addr = '110.249.211.254'
-    name = 's9312-254'
 
     mib_arg_list = [
         {'mib': 'IF-MIB', 'key': 'ifIndex'},
@@ -137,7 +123,7 @@ def _testunit():
         {'mib': 'IF-MIB', 'key': 'ifInOctets'},
         {'mib': 'IF-MIB', 'key': 'ifOutOctets'},
     ]
-    snmpobj = collect(name, ip_addr, community)
+    snmpobj = collect(ip_addr, community)
     table = snmpobj.run(mib_arg_list)
     print(table)
 

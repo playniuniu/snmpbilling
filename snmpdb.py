@@ -3,6 +3,7 @@
 
 import pymongo
 import logging
+from datetime import date
 
 
 class snmpdb():
@@ -33,8 +34,11 @@ class snmpdb():
         items = 0
 
         for row in snmptable:
-            key = {'key': row['key']}
-            basedata = {"$set": {'ip_addr': row['ip_addr'], 'date': row['date'], 'ifIndex': row['ifIndex']}}
+            current_date = date.today().strftime("%Y%m%d")
+            key_value = '-'.join([current_date, row['ifDescr']])
+            key = {'key': key_value}
+
+            basedata = {"$set": {'date': current_date, 'ifIndex': row['ifIndex'], 'ifDescr': row['ifDescr']}}
             ifInOctets = {"$push": {"ifInOctets": row['ifInOctets']}}
             ifOutOctets = {"$push": {"ifOutOctets": row['ifOutOctets']}}
 
@@ -57,7 +61,8 @@ def _testunit():
 
     community = 'luquanne40e12!@'
     ip_addr = '110.249.211.254'
-    name = 's9312-254'
+    dev_name = 's9312_254'
+    user = 'sjz'
     current_month = date.today().strftime("%Y%m")
 
     mib_arg_list = [
@@ -67,14 +72,13 @@ def _testunit():
         {'mib': 'IF-MIB', 'key': 'ifOutOctets'},
     ]
 
-    snmpobj = collect(name, ip_addr, community)
+    snmpobj = collect(ip_addr, community)
     snmp_data = snmpobj.run(mib_arg_list)
 
-    db_name = 'billing'
-    collections_name = 'billing_' + current_month
+    collections_name = '-'.join([current_month, dev_name ])
 
-    snmp_database = snmpdb()
-    snmp_database.useCollections(db_name, collections_name)
+    snmp_database = snmpdb('110.249.213.22')
+    snmp_database.useCollections('billing_' + user, collections_name)
     snmp_database.writeSnmpData(snmp_data)
 
 

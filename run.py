@@ -19,13 +19,14 @@ class snmpDaemon(baseDaemon):
     def __init__(self, pid_file='/tmp/' + sys.argv[0] + '.pid'):
         baseDaemon.__init__(self, pid_file)
         self.snmp_list = []
+        self.debug_mode = False
 
     def snmprun_process(self, args):
 
-        snmpobj = collect(args['dev_name'], args['ip_addr'], args['community'])
+        snmpobj = collect(args['ip_addr'], args['community'])
         snmp_data = snmpobj.run(snmpConfig.snmp_mib)
 
-        snmp_database = snmpdb()
+        snmp_database = snmpdb(snmpConfig.database_address)
         snmp_database.useCollections(args['db_name'], args['table_name'])
         snmp_database.writeSnmpData(snmp_data)
 
@@ -34,14 +35,16 @@ class snmpDaemon(baseDaemon):
 
     def snmp_queen(self, args):
 
-        if os.getppid() != self.parent_pid:
-            logging.info("Pid: {} terminated by parent process!".format(os.getpid()))
-            exit(1)
+        if not self.debug_mode:
+            # Terminate subprocess if main process is stoped
+            if os.getppid() != self.parent_pid:
+                logging.info("Pid: {} terminated by parent process!".format(os.getpid()))
+                exit(1)
 
         queen_task = args
-        queen_task['db_name'] = snmpConfig.mongodb_name
+        queen_task['db_name'] = snmpConfig.database_prefix + queen_task['user']
         current_month = date.today().strftime("%Y%m")
-        queen_task['table_name'] = snmpConfig.mongodb_name + '_' + current_month
+        queen_task['table_name'] = current_month + '_' + queen_task['dev_name']
 
         logging.debug("start process dev:{} ip:{}"
             .format(queen_task['dev_name'], queen_task['ip_addr']))
@@ -71,6 +74,13 @@ class snmpDaemon(baseDaemon):
                 time.sleep(snmp_interval)
 
 
+def _testunit():
+    args = {'dev_name': 'ne40e-232', 'ip_addr': '221.192.23.232',\
+              'community': 'luquanne40e12!@', 'user': 'sjz'}
+    testDemon = snmpDaemon()
+    testDemon.debug_mode = True
+    testDemon.snmp_queen(args)
+
 def main():
     logging.basicConfig(format='%(asctime)s %(message)s',
         datefmt='%Y/%m/%d %H:%M:%S', level=logging.DEBUG, filename='/tmp/snmprun.log')
@@ -98,4 +108,6 @@ def main():
 
 
 if __name__ == '__main__':
+    # _testunit()
     main()
+
