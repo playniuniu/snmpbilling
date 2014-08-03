@@ -17,4 +17,4 @@ snmp_mib = [
 
 snmp_interval = 300
 database_prefix = "billing_"
-database_address = '110.249.213.22'
+database_address = '110.249.213.18'
