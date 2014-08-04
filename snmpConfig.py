@@ -16,5 +16,10 @@ snmp_mib = [
 ]
 
 snmp_interval = 300
+
 database_prefix = "billing_"
-database_address = '110.249.213.18'
+
+database_list = [
+    {'ip': '110.249.213.18',},
+    # {'ip': '110.249.213.20',},
+]

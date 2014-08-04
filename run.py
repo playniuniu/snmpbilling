@@ -26,9 +26,17 @@ class snmpDaemon(baseDaemon):
         snmpobj = collect(args['ip_addr'], args['community'])
         snmp_data = snmpobj.run(snmpConfig.snmp_mib)
 
-        snmp_database = snmpdb(snmpConfig.database_address)
-        snmp_database.useCollections(args['db_name'], args['table_name'])
-        snmp_database.writeSnmpData(snmp_data)
+        current_time = time.time()
+
+        # write multiple database for backup
+        for database in snmpConfig.database_list:
+            try:
+                ip_address = database['ip']
+                snmp_database = snmpdb(ip_address)
+                snmp_database.useCollections(args['db_name'], args['table_name'])
+                snmp_database.writeSnmpData(snmp_data, current_time)
+            except:
+                logging.error("Write to database %s error" % ip_address)
 
         logging.debug("Process dev: %s ip: %s pid: %s complete" %
             (args['dev_name'], args['ip_addr'], str(os.getpid())))
