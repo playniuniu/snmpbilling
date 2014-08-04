@@ -4,6 +4,7 @@
 import pymongo
 import logging
 from datetime import date
+from time import time
 
 
 class snmpdb():
@@ -30,7 +31,7 @@ class snmpdb():
         self.dbName = dbName
         self.clName = collections
 
-    def writeSnmpData(self, snmptable):
+    def writeSnmpData(self, snmptable, timestamp):
         items = 0
 
         for row in snmptable:
@@ -41,11 +42,13 @@ class snmpdb():
             basedata = {"$set": {'date': current_date, 'ifIndex': row['ifIndex'], 'ifDescr': row['ifDescr']}}
             ifInOctets = {"$push": {"ifInOctets": row['ifInOctets']}}
             ifOutOctets = {"$push": {"ifOutOctets": row['ifOutOctets']}}
+            timedata = {"$push": {"timestamp": int(timestamp)}}
 
             try:
                 self.conn.update(key, basedata, upsert=True)
                 self.conn.update(key, ifInOctets, upsert=True)
                 self.conn.update(key, ifOutOctets, upsert=True)
+                self.conn.update(key, timedata, upsert=True)
                 items += 1
             except:
                 logging.error("Could not insert data %s" % row['key'])
@@ -79,7 +82,7 @@ def _testunit():
 
     snmp_database = snmpdb('110.249.213.18')
     snmp_database.useCollections('billing_' + user, collections_name)
-    snmp_database.writeSnmpData(snmp_data)
+    snmp_database.writeSnmpData(snmp_data, time())
 
 
 if __name__ == '__main__':
