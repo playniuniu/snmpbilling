@@ -14,7 +14,6 @@ class collect():
         self.ip_addr = ip_addr
         self.community = community
         self.udp_port = udp_port
-        self.current_date = date.today().strftime("%Y%m%d")
 
     def getSnmpInfo(self, mib_args, snmp_type='snmpwalk'):
         self.cmdGenerator = cmdgen.CommandGenerator()
@@ -120,8 +119,8 @@ def _testunit():
     mib_arg_list = [
         {'mib': 'IF-MIB', 'key': 'ifIndex'},
         {'mib': 'IF-MIB', 'key': 'ifDescr'},
-        {'mib': 'IF-MIB', 'key': 'ifInOctets'},
-        {'mib': 'IF-MIB', 'key': 'ifOutOctets'},
+        {'mib': 'IF-MIB', 'key': 'ifHCInOctets'},
+        {'mib': 'IF-MIB', 'key': 'ifHCOutOctets'},
     ]
     snmpobj = collect(ip_addr, community)
     table = snmpobj.run(mib_arg_list)
@@ -130,8 +129,8 @@ def _testunit():
     mib_arg = [
         {'mib': 'IF-MIB', 'key': 'ifIndex', 'index': 55},
         {'mib': 'IF-MIB', 'key': 'ifDescr', 'index': 55},
-        {'mib': 'IF-MIB', 'key': 'ifInOctets', 'index': 55},
-        {'mib': 'IF-MIB', 'key': 'ifOutOctets', 'index': 55},
+        {'mib': 'IF-MIB', 'key': 'ifHCInOctets', 'index': 55},
+        {'mib': 'IF-MIB', 'key': 'ifHCOutOctets', 'index': 55},
     ]
     table = snmpobj.run(mib_arg, 'snmpget')
     print(table)

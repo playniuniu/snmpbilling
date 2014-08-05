@@ -40,14 +40,14 @@ class snmpdb():
             key = {'key': key_value}
 
             basedata = {"$set": {'date': current_date, 'ifIndex': row['ifIndex'], 'ifDescr': row['ifDescr']}}
-            ifInOctets = {"$push": {"ifInOctets": row['ifInOctets']}}
-            ifOutOctets = {"$push": {"ifOutOctets": row['ifOutOctets']}}
+            ifHCInOctets = {"$push": {"ifHCInOctets": row['ifHCInOctets']}}
+            ifHCOutOctets = {"$push": {"ifHCOutOctets": row['ifHCOutOctets']}}
             timedata = {"$push": {"timestamp": int(timestamp)}}
 
             try:
                 self.conn.update(key, basedata, upsert=True)
-                self.conn.update(key, ifInOctets, upsert=True)
-                self.conn.update(key, ifOutOctets, upsert=True)
+                self.conn.update(key, ifHCInOctets, upsert=True)
+                self.conn.update(key, ifHCOutOctets, upsert=True)
                 self.conn.update(key, timedata, upsert=True)
                 items += 1
             except:
@@ -71,8 +71,8 @@ def _testunit():
     mib_arg_list = [
         {'mib': 'IF-MIB', 'key': 'ifIndex'},
         {'mib': 'IF-MIB', 'key': 'ifDescr'},
-        {'mib': 'IF-MIB', 'key': 'ifInOctets'},
-        {'mib': 'IF-MIB', 'key': 'ifOutOctets'},
+        {'mib': 'IF-MIB', 'key': 'ifHCInOctets'},
+        {'mib': 'IF-MIB', 'key': 'ifHCOutOctets'},
     ]
 
     snmpobj = collect(ip_addr, community)
