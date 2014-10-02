@@ -1,7 +1,7 @@
 #!/home/jyyl/env/snmp/bin/python3
 # coding:utf-8
 
-from multiprocessing import Pool
+import concurrent.futures
 import os
 import sys
 import logging
@@ -12,6 +12,36 @@ from snmpdb import snmpdb
 from datetime import date
 from baseDaemon import baseDaemon
 import snmpConfig
+
+def snmp_queen(args, obj):
+
+        # Terminate subprocess if main process is stoped
+        if os.getppid() != obj.parent_pid:
+            logging.info("Pid: {} terminated by parent process!".format(os.getpid()))
+            exit(1)
+
+        queen_task = args
+        queen_task['db_name'] = snmpConfig.database_prefix + queen_task['user']
+        current_month = date.today().strftime("%Y%m")
+        queen_task['table_name'] = current_month + '_' + queen_task['dev_name']
+
+        logging.debug("start process dev:{} ip:{}"
+            .format(queen_task['dev_name'], queen_task['ip_addr']))
+
+        obj.snmprun_process(queen_task)
+
+
+def demo_queen(args, obj):
+    if os.getppid() != obj.parent_pid:
+        logging.info("Pid: {} terminated by parent process!".format(os.getpid()))
+        exit(1)
+    
+    logging.debug('Run task %s: %s' % (os.getpid(), args['dev_name']))
+    start = time.time()
+    time.sleep(5)
+    end = time.time()
+    logging.debug('Task %s runs %0.2f seconds.' % (os.getpid(), (end - start)))
+
 
 
 class snmpDaemon(baseDaemon):
@@ -41,43 +71,19 @@ class snmpDaemon(baseDaemon):
         logging.debug("Process dev: %s ip: %s pid: %s complete" %
             (args['dev_name'], args['ip_addr'], str(os.getpid())))
 
-    def snmp_queen(self, args):
-
-        if not self.debug_mode:
-            # Terminate subprocess if main process is stoped
-            if os.getppid() != self.parent_pid:
-                logging.info("Pid: {} terminated by parent process!".format(os.getpid()))
-                exit(1)
-
-        queen_task = args
-        queen_task['db_name'] = snmpConfig.database_prefix + queen_task['user']
-        current_month = date.today().strftime("%Y%m")
-        queen_task['table_name'] = current_month + '_' + queen_task['dev_name']
-
-        logging.debug("start process dev:{} ip:{}"
-            .format(queen_task['dev_name'], queen_task['ip_addr']))
-
-        self.snmprun_process(queen_task)
-
-    def demo_queen(self, task):
-        logging.debug('Run task %s: %s' % (os.getpid(), task['dev_name']))
-        start = time.time()
-        time.sleep(5)
-        end = time.time()
-        logging.debug('Task %s runs %0.2f seconds.' % (os.getpid(), (end - start)))
-
+    
     def run(self):
         self.parent_pid = os.getpid()
         snmp_interval = snmpConfig.snmp_interval
 
-        with Pool() as pool:
+        with concurrent.futures.ProcessPoolExecutor() as executor:
 
             while True:
                 self.snmp_list.extend(snmpConfig.snmp_list)
 
                 while len(self.snmp_list) > 0:
                     task_args = self.snmp_list.pop()
-                    pool.apply_async(self.snmp_queen, args=(task_args, ))
+                    executor.submit(snmp_queen, task_args, self)
 
                 time.sleep(snmp_interval)
 
