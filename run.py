@@ -83,11 +83,12 @@ class snmpDaemon(baseDaemon):
 
 
 def _testunit():
-    args = {'dev_name': 'ne40e-232', 'ip_addr': '221.192.23.232',\
-              'community': 'luquanne40e12!@', 'user': 'sjz'}
+    args = {'dev_name': 'ne40e-232', 'ip_addr': '221.192.23.232',
+            'community': 'luquanne40e12!@', 'user': 'sjz'}
     testDemon = snmpDaemon()
     testDemon.debug_mode = True
     testDemon.snmp_queen(args)
+
 
 def main():
     logging.basicConfig(format='%(asctime)s %(message)s',
@@ -118,4 +119,3 @@ def main():
 if __name__ == '__main__':
     # _testunit()
     main()
-

@@ -78,7 +78,7 @@ def _testunit():
     snmpobj = collect(ip_addr, community)
     snmp_data = snmpobj.run(mib_arg_list)
 
-    collections_name = '-'.join([current_month, dev_name ])
+    collections_name = '-'.join([current_month, dev_name])
 
     snmp_database = snmpdb('110.249.213.18')
     snmp_database.useCollections('billing_' + user, collections_name)

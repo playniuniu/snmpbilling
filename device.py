@@ -49,12 +49,11 @@ class snmpDevice():
 
             return True
 
-    def parseDeviceInfo(self,snmp_device_info):
+    def parseDeviceInfo(self, snmp_device_info):
         device_info = {}
         for item in snmp_device_info:
             device_info.update(item)
         return device_info
-
 
     def getPortInfo(self):
         self.port_info = self.snmpobj.run(self.devicePortMIB)
@@ -111,9 +110,9 @@ class snmpDevice():
         self.useCollections(dbName, 'ports')
 
         port_info = {
-           'sys_name': self.device_info['sysName'],
-           'ip': self.device_ip,
-           'port_list': self.port_info,
+            'sys_name': self.device_info['sysName'],
+            'ip': self.device_ip,
+            'port_list': self.port_info,
         }
 
         write_data = {"$set": port_info}
@@ -126,9 +125,9 @@ class snmpDevice():
 
     def writeSnmpData(self, dbName, dev_name, owner):
         self.getPortInfo()
-        key = { 'dev_name' :  dev_name }
-        self.writeDeviceData(dbName,key,owner)
-        self.writePortData(dbName,key,owner)
+        key = {'dev_name': dev_name}
+        self.writeDeviceData(dbName, key, owner)
+        self.writePortData(dbName, key, owner)
 
 
 def _testunit():
