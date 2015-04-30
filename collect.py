@@ -3,6 +3,9 @@
 import logging
 from sh import snmpwalk
 
+# Disable sh logger
+logging.getLogger("sh").setLevel(logging.WARNING)
+
 
 class collect():
 
@@ -128,7 +131,7 @@ class collect():
 
 
 def _testunit():
-    logging.basicConfig(level=logging.WARN)
+    logging.basicConfig(level=logging.INFO)
     # community = 'luquanne40e12!@'
     # ip_addr = '110.249.211.254'
 
