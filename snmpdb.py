@@ -39,16 +39,13 @@ class snmpdb():
             key_value = '-'.join([current_date, row['ifDescr']])
             key = {'key': key_value}
 
-            basedata = {"$set": {'date': current_date, 'ifIndex': row['ifIndex'], 'ifDescr': row['ifDescr']}}
-            ifHCInOctets = {"$push": {"ifHCInOctets": row['ifHCInOctets']}}
-            ifHCOutOctets = {"$push": {"ifHCOutOctets": row['ifHCOutOctets']}}
-            timedata = {"$push": {"timestamp": int(timestamp)}}
+            dataOperation = {
+                "$set": {'date': current_date, 'ifIndex': row['ifIndex'], 'ifDescr': row['ifDescr']},
+                "$push": {"ifHCInOctets": row['ifHCInOctets'], "ifHCOutOctets": row['ifHCOutOctets'], "timestamp": int(timestamp)}
+            }
 
             try:
-                self.conn.update(key, basedata, upsert=True)
-                self.conn.update(key, ifHCInOctets, upsert=True)
-                self.conn.update(key, ifHCOutOctets, upsert=True)
-                self.conn.update(key, timedata, upsert=True)
+                self.conn.update(key, dataOperation, upsert=True)
                 items += 1
             except:
                 logging.error("Could not insert data %s" % row['key'])
@@ -81,7 +78,7 @@ def _testunit():
     collections_name = '-'.join([current_month, dev_name])
 
     snmp_database = snmpdb('110.249.213.18')
-    snmp_database.useCollections('billing_' + user, collections_name)
+    snmp_database.useCollections('test_' + user, collections_name)
     snmp_database.writeSnmpData(snmp_data, time())
 
 
