@@ -3,7 +3,6 @@
 import logging
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 from pysnmp.entity.rfc3413 import mibvar
-from datetime import date
 
 
 class collect():
@@ -71,12 +70,12 @@ class collect():
 
     def parseBindTable(self, varBindTable, snmp_type):
 
+        # made snmpget value same as snmpwalk
+        if snmp_type == 'snmpget':
+            varBindTable = [varBindTable, ]
+
         for varBindTableRow in varBindTable:
             oid_dict = {}
-
-            # made snmpget value same as list
-            if snmp_type == 'snmpget':
-                varBindTableRow = [varBindTableRow, ]
 
             for (oid, val) in varBindTableRow:
                 oid_name, oid_value = self.parseOid(oid, val)
