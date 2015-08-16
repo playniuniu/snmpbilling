@@ -23,6 +23,6 @@ snmp_interval = 300
 database_prefix = "billing_"
 
 database_list = [
-    {'ip': '110.249.213.18', },
+    {'ip': '110.249.213.22', },
     # {'ip': '110.249.213.20',},
 ]

@@ -77,7 +77,7 @@ def _testunit():
 
     collections_name = '-'.join([current_month, dev_name])
 
-    snmp_database = snmpdb('110.249.213.18')
+    snmp_database = snmpdb('110.249.213.22')
     snmp_database.useCollections('test_' + user, collections_name)
     snmp_database.writeSnmpData(snmp_data, time())
 
