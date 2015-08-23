@@ -6,24 +6,24 @@ import os
 import sys
 import logging
 import time
+import pymongo
 
 from collect import collect
 from snmpdb import snmpdb
-from datetime import date
 from baseDaemon import baseDaemon
 import snmpConfig
 
 
 class snmpDaemon(baseDaemon):
 
-    def __init__(self, pid_file='/tmp/' + sys.argv[0] + '.pid'):
+    def __init__(self, pid_file='/tmp/snmpbilling.pid'):
         baseDaemon.__init__(self, pid_file)
         self.snmp_list = []
         self.debug_mode = False
-
+    
+    # snmp 的读取和写入进程
     def snmprun_process(self, args):
-
-        snmpobj = collect(args['ip_addr'], args['community'])
+        snmpobj = collect(args['snmp_ip'], args['snmp_community'])
         snmp_data = snmpobj.run(snmpConfig.snmp_mib)
 
         current_time = time.time()
@@ -39,10 +39,10 @@ class snmpDaemon(baseDaemon):
                 logging.error("Write to database %s error" % ip_address)
 
         logging.debug("Process dev: %s ip: %s pid: %s complete" %
-            (args['dev_name'], args['ip_addr'], str(os.getpid())))
+            (args['dev_id'], args['snmp_ip'], str(os.getpid())))
 
+    # snmp 进程队列
     def snmp_queen(self, args):
-
         if not self.debug_mode:
             # Terminate subprocess if main process is stoped
             if os.getppid() != self.parent_pid:
@@ -50,30 +50,39 @@ class snmpDaemon(baseDaemon):
                 exit(1)
 
         queen_task = args
-        queen_task['db_name'] = snmpConfig.database_prefix + queen_task['user']
-        current_month = date.today().strftime("%Y%m")
-        queen_task['table_name'] = current_month + '_' + queen_task['dev_name']
+        queen_task['db_name'] = snmpConfig.database_name
+        current_month = time.strftime("%Y%m")
+        queen_task['dev_id'] = str(queen_task['_id'])
+        queen_task['table_name'] = 'bill' + '_' + queen_task['dev_id'] + '_' + current_month
 
         logging.debug("start process dev:{} ip:{}"
-            .format(queen_task['dev_name'], queen_task['ip_addr']))
+            .format(queen_task['dev_id'], queen_task['snmp_ip']))
 
         self.snmprun_process(queen_task)
+    
+    # 取得数据库的所有信息
+    def get_device_list(self):
+        try:
+            mainDB = snmpConfig.database_list[0]
+            mongoClient = pymongo.MongoClient(mainDB['ip'], mainDB['port'])
+            mongoDatabase = mongoClient[snmpConfig.database_name]
+            mongoCollection = mongoDatabase['devices']
+            device_list = mongoCollection.find({})
+        except:
+            logging.error("Could not connect to database %s:%s" %
+                (mongoDatabase, mongoCollection))
+            return None
 
-    def demo_queen(self, task):
-        logging.debug('Run task %s: %s' % (os.getpid(), task['dev_name']))
-        start = time.time()
-        time.sleep(5)
-        end = time.time()
-        logging.debug('Task %s runs %0.2f seconds.' % (os.getpid(), (end - start)))
+        return list(device_list)
 
+    # 主进程
     def run(self):
         self.parent_pid = os.getpid()
         snmp_interval = snmpConfig.snmp_interval
 
         with Pool() as pool:
-
             while True:
-                self.snmp_list.extend(snmpConfig.snmp_list)
+                self.snmp_list.extend(self.get_device_list())
 
                 while len(self.snmp_list) > 0:
                     task_args = self.snmp_list.pop()
@@ -83,16 +92,20 @@ class snmpDaemon(baseDaemon):
 
 
 def _testunit():
-    args = {'dev_name': 'ne40e-232', 'ip_addr': '221.192.23.232',
-            'community': 'luquanne40e12!@', 'user': 'sjz'}
-    testDemon = snmpDaemon()
-    testDemon.debug_mode = True
-    testDemon.snmp_queen(args)
+    logging.basicConfig(format='%(asctime)s %(message)s',
+        datefmt='%Y/%m/%d %H:%M:%S', level=logging.DEBUG, filename='/tmp/snmpbilling.log')
 
+    testDaemon = snmpDaemon()
+    testDaemon.debug_mode = True
+    device_list = testDaemon.get_device_list()
+    print("get device test: ")
+    print(str(device_list))
+    print("write data test: ")
+    testDaemon.snmp_queen(device_list[0])
 
 def main():
     logging.basicConfig(format='%(asctime)s %(message)s',
-        datefmt='%Y/%m/%d %H:%M:%S', level=logging.DEBUG, filename='/tmp/snmprun.log')
+        datefmt='%Y/%m/%d %H:%M:%S', level=logging.DEBUG, filename='/tmp/snmpbilling.log')
 
     snmp_daemon = snmpDaemon()
 

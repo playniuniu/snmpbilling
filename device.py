@@ -5,8 +5,6 @@ import pymongo
 import logging
 from time import time
 from collect import collect
-import snmpConfig
-
 
 class snmpDevice():
 
@@ -27,25 +25,25 @@ class snmpDevice():
     def __init__(self):
         pass
 
-    def getDeviceInfo(self, ip_addr, community, udp_port=161):
+    def getDeviceInfo(self, snmp_ip, snmp_community, udp_port=161):
 
-        snmpobj = collect(ip_addr, community, udp_port)
+        snmpobj = collect(snmp_ip, snmp_community, udp_port)
         device_info = snmpobj.run(self.deviceInfoMIB, 'snmpget')
 
         if device_info is None:
             logging.error("ERROR! Get device snmp from %s:%s with %s error!"
-                      % (ip_addr, udp_port, community))
+                      % (snmp_ip, udp_port, snmp_community))
             return False
 
         else:
             self.snmpobj = snmpobj
-            self.device_ip = ip_addr
-            self.community = community
+            self.snmp_ip = snmp_ip
+            self.snmp_community = snmp_community
             self.udp_port = udp_port
             self.device_info = self.parseDeviceInfo(device_info)
 
             logging.info("Get device snmp ip %s sys name %s "
-                      % (ip_addr, self.device_info['sysName']))
+                      % (snmp_ip, self.device_info['sysName']))
 
             return True
 
@@ -56,10 +54,17 @@ class snmpDevice():
         return device_info
 
     def getPortInfo(self):
-        self.port_info = self.snmpobj.run(self.devicePortMIB)
-
+        port_info = self.snmpobj.run(self.devicePortMIB)
+        
+        if port_info is None:
+            logging.error("ERROR! Get device port from %s:%s with %s error!"
+                      % (self.snmp_ip, self.udp_port, self.snmp_community))
+            return False
+        
+        self.port_info = port_info
         logging.info("Get device snmp ip %s port %s "
-                  % (self.device_ip, len(self.port_info)))
+                  % (self.snmp_ip, len(self.port_info)))
+        return True
 
     def connDB(self, ip_addr='127.0.0.1', port=27017):
 
@@ -83,73 +88,79 @@ class snmpDevice():
         self.dbName = dbName
         self.clName = collections
 
-    def writeDeviceData(self, dbName, key, owner):
+    def writeDeviceData(self, dbName, args):
 
         self.useCollections(dbName, 'devices')
 
         device_info = {
             'sys_name': self.device_info['sysName'],
-            'sys_descr': self.device_info['sysDescr'],
-            'ip': self.device_ip,
-            'community': self.community,
-            'port': self.udp_port,
-            'owner': owner,
-            'update_time': time(),
+            'sys_desc': self.device_info['sysDescr'],
+            'snmp_ip': self.snmp_ip,
+            'snmp_community': self.snmp_community,
+            'snmp_port': self.udp_port,
+            'dev_owner': args['dev_owner'],
+            'dev_group': args['dev_group'],
+            'update_time': int(time()),
         }
 
         write_data = {"$set": device_info}
+        key = {'snmp_ip': self.snmp_ip, 'snmp_community': self.snmp_community, 'dev_owner': args['dev_owner']}
 
         try:
-            self.conn.update(key, write_data, upsert=True)
+            self.conn.update_one(key, write_data, upsert=True)
         except:
             logging.error("Could not insert device name: %s ip: %s"
-                          % (self.device_info['sysName'], self.device_ip))
+                          % (self.device_info['sysName'], self.snmp_ip))
 
-    def writePortData(self, dbName, key, owner):
-
+    def writePortData(self, dbName, args):
+        dev_id = ''
+        
+        # 查找相应的 Device
+        self.useCollections(dbName, 'devices')
+        try:
+            device_key = {'snmp_ip': self.snmp_ip, 'snmp_community': self.snmp_community, 'dev_owner': args['dev_owner']}
+            device_info = self.conn.find_one(device_key)
+            dev_id = str(device_info['_id'])
+        except:
+            logging.error("Could not find device ip: %s" % (self.snmp_ip))
+            return False
+        
+        # 插入端口数据
         self.useCollections(dbName, 'ports')
-
         port_info = {
-            'sys_name': self.device_info['sysName'],
-            'ip': self.device_ip,
             'port_list': self.port_info,
         }
-
         write_data = {"$set": port_info}
-
+        
         try:
-            self.conn.update(key, write_data, upsert=True)
+            self.conn.update_one({'dev_id': dev_id}, write_data, upsert=True)
         except:
             logging.error("Could not insert port info name: %s ip: %s"
-                          % (self.device_info['sysName'], self.device_ip))
+                          % (self.device_info['sysName'], self.snmp_ip))
 
-    def writeSnmpData(self, dbName, dev_name, owner):
-        self.getPortInfo()
-        key = {'dev_name': dev_name}
-        self.writeDeviceData(dbName, key, owner)
-        self.writePortData(dbName, key, owner)
-
+    def writeSnmpData(self, dbName, args):
+        if self.getPortInfo():
+            self.writeDeviceData(dbName, args)
+            self.writePortData(dbName, args)
 
 def _testunit():
     logging.basicConfig(level=logging.INFO)
 
+    database_ip = '110.249.213.22'
+    database_name = 'billing'
+    snmp_list = [
+        {'snmp_ip': '61.182.128.1', 'snmp_community': 'IDCHBPTT2o', 'dev_owner': 'jinshi', 'dev_group': 'shijiazhuang'}
+    ]
+
     snmp_device = snmpDevice()
 
-    for device in snmpConfig.snmp_list:
+    for device in snmp_list:
+        snmp_community = device['snmp_community']
+        snmp_ip = device['snmp_ip']
 
-        community = device['community']
-        ip_addr = device['ip_addr']
-        user = device['user']
-        dev_name = device['dev_name']
-
-        if snmp_device.getDeviceInfo(ip_addr, community):
-
-            for database in snmpConfig.database_list:
-                database_address = database['ip']
-                snmp_device.connDB(database_address)
-                database_name = snmpConfig.database_prefix + user
-                snmp_device.writeSnmpData(database_name, dev_name, user)
-
+        if snmp_device.getDeviceInfo(snmp_ip, snmp_community):
+            snmp_device.connDB(database_ip)
+            snmp_device.writeSnmpData(database_name, device)
 
 if __name__ == '__main__':
     _testunit()

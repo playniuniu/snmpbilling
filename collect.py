@@ -132,11 +132,9 @@ class collect():
 
 def _testunit():
     logging.basicConfig(level=logging.INFO)
-    # community = 'luquanne40e12!@'
-    # ip_addr = '110.249.211.254'
 
-    ip_addr = '61.182.128.1'
-    community = 'IDCHBPTT2o'
+    snmp_ip = '61.182.128.1'
+    snmp_community = 'IDCHBPTT2o'
 
     mib_arg_list = [
         {'mib': 'IF-MIB', 'key': 'ifIndex'},
@@ -144,7 +142,7 @@ def _testunit():
         {'mib': 'IF-MIB', 'key': 'ifHCInOctets'},
         {'mib': 'IF-MIB', 'key': 'ifHCOutOctets'},
     ]
-    snmpobj = collect(ip_addr, community)
+    snmpobj = collect(snmp_ip, snmp_community)
     table = snmpobj.run(mib_arg_list)
     print(table)
 

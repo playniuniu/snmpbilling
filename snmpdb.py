@@ -3,9 +3,7 @@
 
 import pymongo
 import logging
-from datetime import date
-from time import time
-
+import time
 
 class snmpdb():
 
@@ -35,8 +33,8 @@ class snmpdb():
         items = 0
 
         for row in snmptable:
-            current_date = date.today().strftime("%Y%m%d")
-            key_value = '-'.join([current_date, row['ifDescr']])
+            current_date = time.strftime("%Y%m%d")
+            key_value = '-'.join([current_date, row['ifIndex']])
             key = {'key': key_value}
 
             dataOperation = {
@@ -56,14 +54,13 @@ class snmpdb():
 
 def _testunit():
     from collect import collect
-    from datetime import date
     logging.basicConfig(level=logging.INFO)
 
-    community = 'luquanne40e12!@'
-    ip_addr = '110.249.211.254'
-    dev_name = 's9312_254'
-    user = 'sjz'
-    current_month = date.today().strftime("%Y%m")
+    snmp_ip = '61.182.128.1'
+    snmp_community = 'IDCHBPTT2o'
+    dev_id = '1'
+    database_name = 'billing'
+    current_month = time.strftime("%Y%m")
 
     mib_arg_list = [
         {'mib': 'IF-MIB', 'key': 'ifIndex'},
@@ -72,14 +69,14 @@ def _testunit():
         {'mib': 'IF-MIB', 'key': 'ifHCOutOctets'},
     ]
 
-    snmpobj = collect(ip_addr, community)
+    snmpobj = collect(snmp_ip, snmp_community)
     snmp_data = snmpobj.run(mib_arg_list)
 
-    collections_name = '-'.join([current_month, dev_name])
+    collections_name = '_'.join(['bill', dev_id, current_month])
 
     snmp_database = snmpdb('110.249.213.22')
-    snmp_database.useCollections('test_' + user, collections_name)
-    snmp_database.writeSnmpData(snmp_data, time())
+    snmp_database.useCollections(database_name, collections_name)
+    snmp_database.writeSnmpData(snmp_data, time.time())
 
 
 if __name__ == '__main__':
