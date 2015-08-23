@@ -9,8 +9,9 @@ snmp_mib = [
 
 snmp_interval = 300
 
-database_name = "billing"
+mongo_db_common = "idc_common"
+mongo_db_billing = "idc_billing"
 
-database_list = [
+mongo_db_list = [
     {'ip':'110.249.213.22','port':27017},
 ]

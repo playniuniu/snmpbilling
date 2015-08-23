@@ -29,10 +29,11 @@ class snmpDaemon(baseDaemon):
         current_time = time.time()
 
         # write multiple database for backup
-        for database in snmpConfig.database_list:
+        for database in snmpConfig.mongo_db_list:
             try:
-                ip_address = database['ip']
-                snmp_database = snmpdb(ip_address)
+                mongo_db_ip = database['ip']
+                mongo_db_port = database['port']
+                snmp_database = snmpdb(mongo_db_ip, mongo_db_port)
                 snmp_database.useCollections(args['db_name'], args['table_name'])
                 snmp_database.writeSnmpData(snmp_data, current_time)
             except:
@@ -50,7 +51,7 @@ class snmpDaemon(baseDaemon):
                 exit(1)
 
         queen_task = args
-        queen_task['db_name'] = snmpConfig.database_name
+        queen_task['db_name'] = snmpConfig.mongo_db_billing
         current_month = time.strftime("%Y%m")
         queen_task['dev_id'] = str(queen_task['_id'])
         queen_task['table_name'] = 'bill' + '_' + queen_task['dev_id'] + '_' + current_month
@@ -63,9 +64,9 @@ class snmpDaemon(baseDaemon):
     # 取得数据库的所有信息
     def get_device_list(self):
         try:
-            mainDB = snmpConfig.database_list[0]
+            mainDB = snmpConfig.mongo_db_list[0]
             mongoClient = pymongo.MongoClient(mainDB['ip'], mainDB['port'])
-            mongoDatabase = mongoClient[snmpConfig.database_name]
+            mongoDatabase = mongoClient[snmpConfig.mongo_db_common]
             mongoCollection = mongoDatabase['devices']
             device_list = mongoCollection.find({})
         except:

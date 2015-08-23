@@ -147,9 +147,13 @@ def _testunit():
     logging.basicConfig(level=logging.INFO)
 
     database_ip = '110.249.213.22'
-    database_name = 'billing'
+    database_name = 'idc_common'
     snmp_list = [
-        {'snmp_ip': '61.182.128.1', 'snmp_community': 'IDCHBPTT2o', 'dev_owner': 'jinshi', 'dev_group': 'shijiazhuang'}
+        {'snmp_ip': '61.182.128.1', 'snmp_community': 'IDCHBPTT2o', 'dev_owner': 'esn', 'dev_group': 'hb'},
+        {'snmp_ip': '221.192.23.232', 'snmp_community': 'luquanne40e12!@', 'dev_owner': 'js', 'dev_group': 'sjz'},
+        {'snmp_ip': '221.192.23.233', 'snmp_community': 'luquanne40e12!@', 'dev_owner': 'js', 'dev_group': 'sjz'},
+        {'snmp_ip': '110.249.211.253', 'snmp_community': 'luquanne40e12!@', 'dev_owner': 'js', 'dev_group': 'sjz'},
+        {'snmp_ip': '110.249.211.254', 'snmp_community': 'luquanne40e12!@', 'dev_owner': 'js', 'dev_group': 'sjz'},
     ]
 
     snmp_device = snmpDevice()

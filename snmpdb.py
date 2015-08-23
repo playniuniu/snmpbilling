@@ -58,8 +58,8 @@ def _testunit():
 
     snmp_ip = '61.182.128.1'
     snmp_community = 'IDCHBPTT2o'
-    dev_id = '1'
-    database_name = 'billing'
+    dev_id = 'test'
+    database_name = 'idc_billing'
     current_month = time.strftime("%Y%m")
 
     mib_arg_list = [
